@@ -1,1 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garage OCP Phosboucraa — Gestion des missions et interventions</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
+<!-- ===================== ÉCRAN DE CONNEXION ===================== -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <div class="login-brand">
+            <img src="img/logo.jpg" alt="OCP Phosboucraa" class="login-logo">
+            <div class="org">OCP Phosboucraa</div>
+            <div class="app-name">Gestion du garage</div>
+            <div class="stripe"></div>
+        </div>
+        <div class="login-tabs">
+            <button class="login-tab active" id="loginTab">Connexion</button>
+            <button class="login-tab" id="registerTab">Créer un compte</button>
+        </div>
+
+        <form id="loginForm" class="login-form">
+            <div class="field">
+                <label for="loginUser">Identifiant</label>
+                <input class="input" id="loginUser" placeholder="admin / mecanicien / user / chauffeur" required>
+            </div>
+            <div class="field">
+                <label for="loginPass">Mot de passe</label>
+                <input class="input" type="password" id="loginPass" placeholder="••••••••" required>
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <button class="btn btn-primary" type="submit">Se connecter</button>
+        </form>
+
+        <form id="registerForm" class="login-form hidden">
+            <div class="field">
+                <label for="registerUser">Identifiant</label>
+                <input class="input" id="registerUser" placeholder="nouvel utilisateur" required>
+            </div>
+            <div class="field">
+                <label for="registerFullName">Nom complet</label>
+                <input class="input" id="registerFullName" placeholder="Prénom Nom" required>
+            </div>
+            <div class="field">
+                <label for="registerPass">Mot de passe</label>
+                <input class="input" type="password" id="registerPass" placeholder="••••••••" required>
+            </div>
+            <div class="field">
+                <label for="registerPassConfirm">Confirmer le mot de passe</label>
+                <input class="input" type="password" id="registerPassConfirm" placeholder="••••••••" required>
+            </div>
+            <div class="login-error" id="registerError"></div>
+            <button class="btn btn-primary" type="submit">Créer le compte</button>
+        </form>
+
+        <div class="login-hint">
+            <strong>Démo</strong> — admin:admin123 · user:user123
+        </div>
+    </div>
+</div>
+
+<!-- ===================== APPLICATION ===================== -->
+<div class="app-shell hidden" id="appShell">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <img src="img/logo.jpg" alt="OCP Phosboucraa" class="sidebar-logo">
+            <div class="org">OCP Phosboucraa</div>
+            <div class="app-name">Garage — Missions &amp; interventions</div>
+        </div>
+        <ul class="nav-list" id="navList">
+            <!-- Généré dynamiquement par app.js selon le rôle -->
+        </ul>
+        <div class="sidebar-footer">@copyright 2026<br>OCP PHOSBOCRAA</div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div style="display:flex; align-items:center; gap:14px;">
+<button class="icon-btn hamburger-btn" id="hamburgerBtn" title="Menu">
+    <svg class="ham-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path class="ham-top" d="M3 6h18"/>
+        <path class="ham-mid" d="M3 12h18"/>
+        <path class="ham-bot" d="M3 18h18"/>
+    </svg>
+</button>
+                <div>
+                    <h1 id="viewTitle">Tableau de bord</h1>
+                <div class="subtitle" id="viewSubtitle">Vue d'ensemble de l'activité du garage</div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-date" id="topbarDate"></span>
+                <button class="btn btn-outline btn-sm" id="logoutBtn">Déconnexion</button>
+            </div>
+        </header>
+
+        <main class="content">
+
+            <!-- ---------- TABLEAU DE BORD ---------- -->
+            <section class="view active" id="view-dashboard">
+                <div class="kpi-row" id="kpiRow"></div>
+                <div class="charts-grid">
+                    <div class="panel">
+                        <div class="panel-title">Consommation mensuelle <small>Carburant &amp; lubrifiant</small></div>
+                        <canvas id="chartConsoMensuelle" height="200"></canvas>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-title">Parc par statut</div>
+                        <canvas id="chartParcStatut" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="charts-grid full">
+                    <div class="panel">
+                        <div class="panel-title">Échéances à venir (30 jours) <small>Visites techniques, entretiens…</small></div>
+                        <div class="alert-list" id="echeancesList"></div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-title">Missions par statut</div>
+                        <canvas id="chartMissionsStatut" height="200"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---------- MISSIONS ---------- -->
+            <section class="view" id="view-missions">
+                <div class="toolbar">
+                    <div class="filters">
+                        <select class="select" id="filterMissionStatut">
+                            <option value="">Tous les statuts</option>
+                            <option>Planifiée</option><option>En cours</option><option>Terminée</option><option>Annulée</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddMission">+ Nouvelle mission</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Véhicule</th><th>Chauffeur</th><th>Destination</th><th>Motif</th>
+                            <th>Départ</th><th>Retour</th><th>Km parcourus</th><th>Statut</th><th></th>
+                        </tr></thead>
+                        <tbody id="missionsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ---------- PARC AUTOMOBILE ---------- -->
+            <section class="view" id="view-parc">
+                <div class="toolbar">
+                    <div class="filters">
+                        <select class="select" id="filterParcStatut">
+                            <option value="">Tous les statuts</option>
+                            <option>Disponible</option><option>En mission</option><option>En réparation</option><option>Hors service</option>
+                        </select>
+                        <select class="select" id="filterParcType">
+                            <option value="">Tous les types</option>
+                            <option>Léger</option><option>Utilitaire</option><option>Poids lourd</option><option>Engin</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddVehicule">+ Nouveau véhicule</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Véhicule</th><th>Type</th><th>Service</th><th>Kilométrage</th>
+                            <th>Acquisition</th><th>Statut</th><th></th>
+                        </tr></thead>
+                        <tbody id="parcBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ---------- CONSOMMATIONS ---------- -->
+            <section class="view" id="view-consommations">
+                <div class="toolbar">
+                    <div class="filters">
+                        <select class="select" id="filterConsoType">
+                            <option value="">Carburant &amp; lubrifiant</option>
+                            <option>Carburant</option><option>Lubrifiant</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddConso">+ Nouvel enregistrement</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Véhicule</th><th>Type</th><th>Date</th><th>Quantité</th>
+                            <th>Coût unit.</th><th>Coût total</th><th>Fournisseur</th><th></th>
+                        </tr></thead>
+                        <tbody id="consoBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ---------- DEMANDES VÉHICULE ---------- -->
+            <section class="view" id="view-demandes-vehicule">
+                <div class="toolbar">
+                    <div class="filters">
+                        <select class="select" id="filterDemandeStatut">
+                            <option value="">Tous les statuts</option>
+                            <option>En attente</option><option>Approuvée</option><option>Refusée</option><option>Annulée</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddDemande">+ Nouvelle demande</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Employé</th><th>Service</th><th>Destination</th><th>Motif</th>
+                            <th>Date demande</th><th>Départ</th><th>Retour prévu</th><th>Véhicule</th><th>Statut</th><th></th>
+                        </tr></thead>
+                        <tbody id="demandeBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ---------- RÉPARATIONS ---------- -->
+            <section class="view" id="view-reparations">
+                <div class="toolbar">
+                    <div class="filters">
+                        <select class="select" id="filterIntervType">
+                            <option value="">Tous les types</option>
+                            <option>Visite technique</option><option>Réparation</option>
+                            <option>Entretien préventif</option><option>Vidange</option><option>Pneumatiques</option>
+                        </select>
+                        <select class="select" id="filterIntervStatut">
+                            <option value="">Tous les statuts</option>
+                            <option>Planifiée</option><option>En cours</option><option>Terminée</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddInterv">+ Nouvelle intervention</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Véhicule</th><th>Type</th><th>Date</th><th>Description</th>
+                            <th>Prestataire</th><th>Coût</th><th>Échéance</th><th>Statut</th><th></th>
+                        </tr></thead>
+                        <tbody id="intervBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ---------- REPORTING & ÉTATS ---------- -->
+            <section class="view" id="view-reporting">
+                <div class="toolbar no-print">
+                    <div class="filters">
+                        <select class="select" id="etatSelect">
+                            <option value="couts">État des coûts par véhicule</option>
+                            <option value="conso">État des consommations mensuelles</option>
+                            <option value="missions">État des missions</option>
+                            <option value="interventions">État des interventions par type</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline" id="btnExportCsv">Exporter en CSV</button>
+                        <button class="btn btn-secondary" id="btnPrintEtat">Imprimer l'état</button>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title" id="etatTitle">État des coûts par véhicule</div>
+                    <div class="table-wrap" style="box-shadow:none;">
+                        <table id="etatTable">
+                            <thead id="etatHead"></thead>
+                            <tbody id="etatBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---------- GESTION DES UTILISATEURS ---------- -->
+            <section class="view" id="view-users">
+                <div class="toolbar">
+                    <button class="btn btn-primary" id="btnAddUser">+ Nouvel utilisateur</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Identifiant</th><th>Nom complet</th><th>Rôle</th><th>Service</th><th>Statut</th><th>Date création</th><th></th>
+                        </tr></thead>
+                        <tbody id="usersBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- ===================== MODAL GÉNÉRIQUE ===================== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">Titre</h3>
+            <button class="modal-close" id="modalClose">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="modalForm">
+            <div class="modal-body">
+                <div class="form-grid" id="modalFields"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="modalCancel">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="modalSubmit">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="js/state.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/vehicules.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/consommations.js"></script>
+<script src="js/interventions.js"></script>
+<script src="js/demandes-vehicule.js"></script>
+<script src="js/reporting.js"></script>
+<script src="js/users.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
